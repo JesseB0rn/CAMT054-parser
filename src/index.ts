@@ -1,5 +1,5 @@
+import "./styles/main.scss";
 import { X2jOptions, XMLParser } from "fast-xml-parser";
-import { TxDtls } from "./classes/camt054.class";
 
 let efilename = document.getElementById("filename");
 let etransactions = document.getElementById("transactions");
@@ -29,8 +29,8 @@ function buildTxHTML(amount: number, ref: string, date: string) {
   return `
 
     <h2>Details für TX ${ref}</h2>
-    <p>Ref: ${ref}</p>
-    <p>Total: ${amount}</p>
+    <p class="ref">Ref: ${ref}</p>
+    <p>Total: CHF ${amount}</p>
     <p>Datum: ${date}</p>
     <hr/>
   `;
