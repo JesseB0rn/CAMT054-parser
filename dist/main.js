@@ -2688,6 +2688,7 @@ var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from
 
 var efilename = document.getElementById("filename");
 var etransactions = document.getElementById("transactions");
+var eIBAN = document.getElementById("iban");
 function preventDefault(event) {
     event.preventDefault();
 }
@@ -2723,8 +2724,19 @@ function openedFile(file) {
         });
     });
 }
+function splitRef(ref) {
+    /**
+     *
+     * Scheme:
+     * 000000000000227007200348539
+     * 289663000000221012100000006
+     * |----12-----|---7--|x|-5--|-
+     */
+    return [ref.slice(0, 12), ref.slice(12, 21), ref.slice(21, 26)];
+}
 function buildTxHTML(amount, ref, date) {
-    return "\n\n    <h2>Details f\u00FCr TX ".concat(ref, "</h2>\n    <p class=\"ref\">Ref: ").concat(ref, "</p>\n    <p>Total: CHF ").concat(amount, "</p>\n    <p>Datum: ").concat(date, "</p>\n    <hr/>\n  ");
+    var splt = splitRef(ref);
+    return "\n    <p class=\"ref\">RE Nr.: ".concat(splt[1], " DEBI Nr.: ").concat(splt[2], " REF.: ").concat(splt[0], "</p>\n    <p>Total: CHF ").concat(amount, "</p>\n    <p>Datum: ").concat(date, "</p>\n    <hr/>\n  ");
 }
 function openedFileText(fileText, name) {
     var data = fileText;
@@ -2756,6 +2768,7 @@ function openedFileText(fileText, name) {
         html += buildTxHTML(dtls.Amt, dtls.RmtInf.Strd.CdtrRefInf.Ref, jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt);
     });
     etransactions.innerHTML = html;
+    eIBAN.innerHTML = jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Acct.Id.IBAN;
 }
 
 })();

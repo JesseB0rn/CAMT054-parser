@@ -3,6 +3,7 @@ import { X2jOptions, XMLParser } from "fast-xml-parser";
 
 let efilename = document.getElementById("filename");
 let etransactions = document.getElementById("transactions");
+let eIBAN = document.getElementById("iban");
 
 function preventDefault(event: DragEvent) {
   event.preventDefault();
@@ -25,11 +26,21 @@ async function openedFile(file: File) {
   openedFileText(await file.text(), file.name);
 }
 
-function buildTxHTML(amount: number, ref: string, date: string) {
-  return `
+function splitRef(ref: string) {
+  /**
+   *
+   * Scheme:
+   * 000000000000227007200348539
+   * 289663000000221012100000006
+   * |----12-----|---7--|x|-5--|-
+   */
+  return [ref.slice(0, 12), ref.slice(12, 21), ref.slice(21, 26)];
+}
 
-    <h2>Details für TX ${ref}</h2>
-    <p class="ref">Ref: ${ref}</p>
+function buildTxHTML(amount: number, ref: string, date: string) {
+  const splt = splitRef(ref);
+  return `
+    <p class="ref">RE Nr.: ${splt[1]} DEBI Nr.: ${splt[2]} REF.: ${splt[0]}</p>
     <p>Total: CHF ${amount}</p>
     <p>Datum: ${date}</p>
     <hr/>
@@ -71,4 +82,5 @@ function openedFileText(fileText: string, name: string) {
     html += buildTxHTML(dtls.Amt, dtls.RmtInf.Strd.CdtrRefInf.Ref, jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt);
   });
   etransactions!.innerHTML = html;
+  eIBAN!.innerHTML = jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Acct.Id.IBAN;
 }
