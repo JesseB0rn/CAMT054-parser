@@ -1,9 +1,8 @@
-import { XMLParser } from "fast-xml-parser";
+import { X2jOptions, XMLParser } from "fast-xml-parser";
+import { TxDtls } from "./classes/camt054.class";
 
 let efilename = document.getElementById("filename");
-let eamt = document.getElementById("amt");
-let eref = document.getElementById("ref");
-let edate = document.getElementById("date");
+let etransactions = document.getElementById("transactions");
 
 function preventDefault(event: DragEvent) {
   event.preventDefault();
@@ -26,15 +25,50 @@ async function openedFile(file: File) {
   openedFileText(await file.text(), file.name);
 }
 
+function buildTxHTML(amount: number, ref: string, date: string) {
+  return `
+
+    <h2>Details für TX ${ref}</h2>
+    <p>Ref: ${ref}</p>
+    <p>Total: ${amount}</p>
+    <p>Datum: ${date}</p>
+    <hr/>
+  `;
+}
+
 function openedFileText(fileText: string, name: string) {
   let data = fileText;
-  const parser = new XMLParser();
+  const options: Partial<X2jOptions> = {
+    numberParseOptions: {
+      leadingZeros: false,
+      hex: true,
+      skipLike: /[\s\S]*/,
+    },
+  };
+  const parser = new XMLParser(options);
   let jsonrepr = parser.parse(data);
 
-  console.log(jsonrepr);
+  // console.log(jsonrepr);
+
+  // check number of entries
+  const entryCnt = jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.Btch.NbOfTxs;
+  console.log(`we've gotten notice of ${entryCnt} TX's`);
+
+  // get all TX dtls
+  let txDtls: any[] = [];
+
+  if (entryCnt == 1) {
+    txDtls.push(jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls);
+  } else {
+    txDtls = [...jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls];
+  }
+  console.log(txDtls);
 
   efilename!.innerHTML = name;
-  eamt!.innerHTML = `AMT:    CHF ${jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.Amt}`;
-  eref!.innerHTML = `REF:    ${jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls.RmtInf.Strd.CdtrRefInf.Ref}`;
-  edate!.innerHTML = `DATE:   ${jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt}`;
+
+  let html = "";
+  txDtls.forEach((dtls) => {
+    html += buildTxHTML(dtls.Amt, dtls.RmtInf.Strd.CdtrRefInf.Ref, jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt);
+  });
+  etransactions!.innerHTML = html;
 }

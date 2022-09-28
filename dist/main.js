@@ -2131,11 +2131,18 @@ var __generator = (undefined && undefined.__generator) || function (thisArg, bod
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (undefined && undefined.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 
 var efilename = document.getElementById("filename");
-var eamt = document.getElementById("amt");
-var eref = document.getElementById("ref");
-var edate = document.getElementById("date");
+var etransactions = document.getElementById("transactions");
 function preventDefault(event) {
     event.preventDefault();
 }
@@ -2171,15 +2178,39 @@ function openedFile(file) {
         });
     });
 }
+function buildTxHTML(amount, ref, date) {
+    return "\n\n    <h2>Details f\u00FCr TX ".concat(ref, "</h2>\n    <p>Ref: ").concat(ref, "</p>\n    <p>Total: ").concat(amount, "</p>\n    <p>Datum: ").concat(date, "</p>\n    <hr/>\n  ");
+}
 function openedFileText(fileText, name) {
     var data = fileText;
-    var parser = new fast_xml_parser__WEBPACK_IMPORTED_MODULE_0__.XMLParser();
+    var options = {
+        numberParseOptions: {
+            leadingZeros: false,
+            hex: true,
+            skipLike: /[\s\S]*/,
+        },
+    };
+    var parser = new fast_xml_parser__WEBPACK_IMPORTED_MODULE_0__.XMLParser(options);
     var jsonrepr = parser.parse(data);
-    console.log(jsonrepr);
+    // console.log(jsonrepr);
+    // check number of entries
+    var entryCnt = jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.Btch.NbOfTxs;
+    console.log("we've gotten notice of ".concat(entryCnt, " TX's"));
+    // get all TX dtls
+    var txDtls = [];
+    if (entryCnt == 1) {
+        txDtls.push(jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls);
+    }
+    else {
+        txDtls = __spreadArray([], jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls, true);
+    }
+    console.log(txDtls);
     efilename.innerHTML = name;
-    eamt.innerHTML = "AMT:    CHF ".concat(jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.Amt);
-    eref.innerHTML = "REF:    ".concat(jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.NtryDtls.TxDtls.RmtInf.Strd.CdtrRefInf.Ref);
-    edate.innerHTML = "DATE:   ".concat(jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt);
+    var html = "";
+    txDtls.forEach(function (dtls) {
+        html += buildTxHTML(dtls.Amt, dtls.RmtInf.Strd.CdtrRefInf.Ref, jsonrepr.Document.BkToCstmrDbtCdtNtfctn.Ntfctn.Ntry.ValDt.Dt);
+    });
+    etransactions.innerHTML = html;
 }
 
 })();
